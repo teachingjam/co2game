@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>생태계 탐정단 - 사라진 생물들의 비밀을 밝혀라!</title>
+<link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+
+<!-- 1. 타이틀 화면 -->
+<div class="screen on" id="sTitle" style="background-image: url('assets/img/bg/title.jpg');">
+  <div class="layer" style="display:flex;flex-direction:column;align-items:center;width:100%;max-width:760px;margin-top:auto;margin-bottom:auto;">
+    <div style="width:160px;height:160px;margin-bottom:8px;border-radius:24px;overflow:hidden;border:5px solid #2e1c0c;background:#fff8e7;box-shadow:0 8px 24px rgba(0,0,0,0.6);" id="mascot">
+      <img src="assets/img/char/owl.png" style="width:100%;height:100%;object-fit:cover;image-rendering:pixelated;" alt="부엉 반장">
+    </div>
+    <h1 class="title">생태계 탐정단</h1>
+    <div class="pill" style="margin:4px 0 16px;font-size:22px;">사라진 생물들의 비밀을 밝혀라!</div>
+    
+    <div class="paper" style="max-width:560px;text-align:center;">
+      <div style="font-size:24px;font-weight:bold;margin:8px 0 12px;color:#5d3a14;">탐정 이름을 적어 주세요</div>
+      <input id="nameIn" maxlength="10" placeholder="예) 김하늘" style="text-align:center;">
+      <div class="row" style="margin-top:16px;">
+        <button class="btn big" data-act="start">🔍 사건 수사 시작!</button>
+      </div>
+      <div style="margin-top:10px;">
+        <button class="btn gray sm" data-act="reset">기록 지우고 처음부터</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 2. 사건 지도 화면 (탐정 사무실 배경) -->
+<div class="screen" id="sMap" style="background-image: url('assets/img/bg/office.jpg');">
+  <div class="topbar">
+    <div style="display:flex;gap:10px;align-items:center;">
+      <span class="pill" id="hello"></span>
+      <span class="pill" id="starTot"></span>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <button class="sound-toggle-btn" id="soundBtn">🔊 소리 켜짐</button>
+      <button class="btn blue sm" data-act="dex">📖 현상 도감</button>
+    </div>
+  </div>
+  
+  <div style="background:rgba(16,35,58,0.85);padding:10px 24px;border-radius:16px;border:3px solid #ffca28;text-align:center;margin-bottom:12px;">
+    <h1 class="title" style="font-size:40px;margin:0;">사건 수사 지도</h1>
+    <p style="color:#e1f5fe;font-size:20px;margin-top:4px;">사건마다 수사 방법이 달라요! 8번 사건은 앞의 7개를 모두 해결하면 열립니다.</p>
+  </div>
+  
+  <div class="grid" id="caseGrid"></div>
+  <div id="reportBtn" style="margin-top:18px;"></div>
+</div>
+
+<!-- 3. 스테이지/사건 진행 화면 -->
+<div class="screen" id="sCase" style="background:#0e1722;">
+  <div class="stagebar">
+    <span class="pill" id="cTitle"></span>
+    <div class="steps" id="steps"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="sound-toggle-btn" id="soundBtnCase">🔊</button>
+      <button class="btn gray sm" data-act="exit">지도로</button>
+    </div>
+  </div>
+  <div id="stage"></div>
+</div>
+
+<!-- 4. 도감 화면 -->
+<div class="screen" id="sDex" style="background: radial-gradient(circle at 50% 30%, #1e3d59, #09131d);">
+  <div class="topbar">
+    <h2 style="color:#fff;font-size:36px;font-weight:bold;text-shadow:0 4px 8px rgba(0,0,0,0.8);">이산화 탄소 현상 도감</h2>
+    <button class="btn" data-act="map">지도로 돌아가기</button>
+  </div>
+  <div class="dex" id="dex"></div>
+</div>
+
+<!-- 5. 최종 보고서 화면 -->
+<div class="screen" id="sReport" style="background-image: url('assets/img/bg/office.jpg');">
+  <div class="paper" style="width:min(1020px,96%);margin:auto;">
+    <h2 style="font-size:36px;color:#8d3b00;text-align:center;margin-bottom:14px;">나만의 기후 탐정 보고서</h2>
+    <div style="font-weight:bold;color:#5d3a14;margin:10px 0 6px;">① 대표 스티커 고르기</div>
+    <div class="row" id="stickers" style="gap:10px;justify-content:flex-start;margin-bottom:14px;"></div>
+    
+    <div style="font-weight:bold;color:#5d3a14;margin:10px 0 6px;">② 조사하면서 가장 놀랐던 사실</div>
+    <textarea id="rFact" maxlength="80" placeholder="예) 이산화 탄소가 바다에 녹으면 조개껍데기가 약해지고 산호가 하얗게 변한다"></textarea>
+    
+    <div style="font-weight:bold;color:#5d3a14;margin:10px 0 6px;">③ 생태계를 지키는 나의 실천 다짐</div>
+    <textarea id="rPledge" maxlength="80" placeholder="예) 가까운 거리는 걸어 다니고 안 쓰는 전기 플러그를 뽑는다"></textarea>
+    
+    <div class="row" style="margin-top:16px;gap:12px;">
+      <button class="btn gray" data-act="map">지도로</button>
+      <button class="btn blue" data-act="draw">미리보기</button>
+      <button class="btn" data-act="save">💾 이미지로 저장</button>
+    </div>
+    
+    <div style="text-align:center;margin-top:18px;">
+      <canvas id="cv" width="1200" height="1700" style="width:460px;"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- 모달 팝업 -->
+<div class="modal" id="modal">
+  <div class="mcard">
+    <div class="micon" id="mIcon"></div>
+    <h2 id="mTitle"></h2>
+    <p id="mText"></p>
+    <div class="row" id="mBtns"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- 스크립트 로드 -->
+<script src="js/audio.js"></script>
+<script src="js/pixels.js"></script>
+<script src="js/char_data.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>

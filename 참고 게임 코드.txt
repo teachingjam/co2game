@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>생태계 탐정단</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{font-family:"Gowun Dodum","Noto Sans KR",sans-serif;background:#10233a;color:#2b2118;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;padding:14px 18px;overflow-y:auto;animation:fade .35s}
+.screen.on{display:flex}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+@keyframes pop{from{transform:scale(.7);opacity:0}}
+@keyframes pulse{50%{opacity:.45}}
+@keyframes sh{25%{transform:translateX(-10px)}75%{transform:translateX(10px)}}
+.shake{animation:sh .4s}
+.bgsvg{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+.layer{position:relative;z-index:1;width:100%;display:flex;flex-direction:column;align-items:center}
+h1,h2,.btn{font-family:"Jua",sans-serif;font-weight:normal}
+.btn{font-size:25px;padding:14px 30px;border:none;border-radius:20px;background:linear-gradient(#ffd54f,#ffb300);color:#4a2c00;box-shadow:0 7px 0 #b57900,0 10px 18px #0005;margin:8px;min-height:64px;cursor:pointer;font-family:"Jua",sans-serif}
+.btn:active{transform:translateY(5px);box-shadow:0 2px 0 #b57900}
+.btn.blue{background:linear-gradient(#81d4fa,#29b6f6);color:#01384f;box-shadow:0 7px 0 #0277bd,0 10px 18px #0005}
+.btn.gray{background:linear-gradient(#eceff1,#b0bec5);color:#37474f;box-shadow:0 7px 0 #78909c,0 10px 18px #0005}
+.btn.red{background:linear-gradient(#ef9a9a,#e53935);color:#fff;box-shadow:0 7px 0 #b71c1c,0 10px 18px #0005}
+.btn.sm{font-size:19px;min-height:48px;padding:8px 18px}
+.btn.big{font-size:32px;min-width:340px;min-height:84px}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.paper{background:#fff8e7;background-image:repeating-linear-gradient(#fff8e7 0 38px,#f0e2c0 38px 40px);border-radius:10px 24px 24px 10px;border-left:14px solid #8d5524;padding:22px 28px;width:100%;box-shadow:0 14px 40px #0007}
+.title{font-size:64px;color:#fff;text-shadow:0 5px 0 #0b3d5c,0 10px 20px #0008;text-align:center;margin-top:16px}
+input:not([type=range]),textarea{font-size:24px;padding:14px;border-radius:14px;border:3px solid #8d5524;width:100%;font-family:inherit;background:#fffdf7;user-select:text;-webkit-user-select:text}
+textarea{height:96px;resize:none}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:28px;border-radius:14px;background:linear-gradient(90deg,#4fc3f7,#ffb300,#e53935);margin:16px 0;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:58px;height:58px;border-radius:50%;background:#fff;border:7px solid #5d4037;box-shadow:0 3px 8px #0006}
+.topbar,.stagebar{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+.pill{background:#000a;color:#fff;border-radius:30px;padding:8px 18px;font-size:20px;font-family:"Jua";display:inline-block;margin:2px}
+.steps{display:flex;gap:6px;flex:1;justify-content:center;flex-wrap:wrap}
+.step{font-family:Jua;font-size:17px;padding:6px 12px;border-radius:20px;background:#ffffff22;color:#fff9}
+.step.now{background:#ffca28;color:#4a2c00}
+.step.ok{background:#43a047;color:#fff}
+#stage{width:min(1080px,100%);display:flex;flex-direction:column;align-items:center;position:relative}
+.box{position:relative;width:min(100%,126vh);aspect-ratio:2/1;border-radius:22px;overflow:hidden;box-shadow:0 0 0 5px #fff,0 14px 34px #000a}
+.box>svg{position:absolute;inset:0;width:100%;height:100%}
+.nt{touch-action:none}
+.hudrow{display:flex;gap:10px;align-items:center;margin-bottom:8px;flex-wrap:wrap;justify-content:center}
+.hint{color:#cfe8ff;font-size:19px;margin-top:10px;text-align:center}
+.lbl{font-family:"Jua";font-size:24px;margin:12px 0 6px;color:#5d3a14}
+.row{display:flex;flex-wrap:wrap;justify-content:center;align-items:center}
+/* 지도 */
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;width:min(1050px,98%)}
+.case{border-radius:20px;overflow:hidden;background:#fff;box-shadow:0 8px 0 #0006;cursor:pointer;position:relative}
+.case:active{transform:scale(.96)}
+.case svg{display:block;width:100%;height:105px}
+.case .nm{font-family:"Jua";font-size:20px;padding:8px 8px 2px;text-align:center}
+.case .st{font-size:22px;color:#ff8f00;text-align:center;padding-bottom:6px;min-height:30px}
+.case.lock{filter:grayscale(1) brightness(.6)}
+.stamp{position:absolute;top:12px;right:-6px;background:#c62828;color:#fff;font-family:"Jua";font-size:21px;padding:4px 16px;transform:rotate(14deg);border:3px solid #fff;border-radius:6px}
+/* 대화 */
+.banner{position:absolute;top:7%;left:0;right:0;margin:auto;width:max-content;background:#c62828;color:#fff;font-family:Jua;font-size:32px;padding:8px 30px;border:4px solid #fff;border-radius:10px;z-index:4;animation:fadein .6s}
+.dlg{position:absolute;left:2%;right:2%;bottom:3%;display:flex;gap:14px;align-items:center;background:#fff8e7f2;border:5px solid #8d5524;border-radius:22px;padding:12px 18px;z-index:5;cursor:pointer;min-height:130px}
+.dlg .pf{width:108px;height:108px;flex:none;border-radius:50%;overflow:hidden;border:5px solid #8d5524;background:#fff}
+.dlg .pf svg{width:100%;height:100%}
+.dname{font-family:Jua;font-size:22px;color:#8d3b00}
+.dtx{font-size:23px;line-height:1.5;flex:1}
+.dlg:after{content:"▼ 터치";position:absolute;right:16px;bottom:6px;color:#8d5524;font-family:Jua;font-size:16px;animation:pulse 1s infinite}
+/* 손전등 */
+.dark{position:absolute;inset:0;pointer-events:none;z-index:3}
+.obj{position:absolute;width:11%;aspect-ratio:1;transform:translate(-50%,-50%);z-index:2;background:none;border:none;padding:0}
+.obj
+ svg{width:100%;height:100%;pointer-events:none}
+.obj.got{filter:drop-shadow(0 0 14px #ffeb3b)}
+.modal{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+.modal.on{display:flex}
+.mcard{background:#fff8e7;border-radius:26px;padding:24px;max-width:720px;width:100%;text-align:center;border:6px solid #8d5524;animation:pop .3s;max-height:94vh;overflow-y:auto}
+.mcard h2{font-size:32px;color:#8d3b00;margin-bottom:6px}
+.mcard p{font-size:22px;line-height:1.6;margin:10px 0}
+.micon svg{width:110px;height:110px}
+.slots{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+.slot,.chip{min-width:140px;min-height:74px;border-radius:14px;padding:10px;font-size:19px;display:flex;align-items:center;justify-content:center;text-align:center;font-family:"Jua"}
+.slot{border:3px dashed #a1887f;background:#efe3c8;color:#a1887f}
+.slot.fill{border:3px solid #2e7d32;background:#c8e6c9;color:#1b5e20;animation:pop .3s}
+.slot.start{border:3px solid #c62828;background:#ffcdd2;color:#8e0000}
+.arrow{font-size:28px;align-self:center;color:#8d5524}
+.chip{background:linear-gradient(#fffde7,#ffe082);box-shadow:0 6px 0 #c8a03a;cursor:pointer;max-width:220px}
+.chip.used{visibility:hidden}
+.qbtn{display:block;width:100%;margin:10px 0}
+.dex{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:min(1050px,98%)}
+.ph{background:#fff8e7;border-radius:16px;padding:14px;font-size:18px;line-height:1.45;border-left:10px solid #43a047}
+.ph b{font-family:"Jua";font-size:22px;display:block;font-weight:normal}
+.ph.lock{background:#ffffff22;color:#fff9;border-left-color:#fff4}
+.stk{width:80px;height:80px;border-radius:16px;border:5px solid transparent;cursor:pointer;background:#fff;padding:4px}
+.stk.sel{border-color:#ff6f00}
+.stk svg{width:100%;height:100%}
+canvas{max-width:100%;border-radius:12px;box-shadow:0 8px 20px #0006}
+#toast{position:fixed;top:14%;left:50%;transform:translateX(-50%);background:#3e2723;color:#fff;font-family:Jua;font-size:26px;padding:10px 26px;border-radius:30px;z-index:60;display:none;pointer-events:none;border:3px solid #ffca28}
+#err{position:fixed;bottom:0;left:0;right:0;background:#c62828;color:#fff;font-size:16px;padding:8px;display:none;z-index:99}
+@media (max-width:820px){.grid{grid-template-columns:repeat(2,1fr)}.dex{grid-template-columns:repeat(2,1fr)}.title{font-size:44px}.dlg .pf{width:80px;height:80px}}
+</style>
+</head>
+<body>
+
+<div class="screen on" id="sTitle">
+  <svg class="bgsvg" id="titleBg" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid slice"></svg>
+  <div class="layer">
+    <div style="width:180px;height:180px;margin-top:10px;border-radius:50%;overflow:hidden;border:6px solid #fff" id="mascot"></div>
+    <h1 class="title">생태계 탐정단</h1>
+    <div class="pill" style="margin:8px 0 18px">사라진 생물들의 비밀을 밝혀라!</div>
+    <div class="paper" style="max-width:560px;text-align:center">
+      <div class="lbl">탐정 이름을 적어 주세요</div>
+      <input id="nameIn" maxlength="10" placeholder="예) 김하늘">
+      <div class="row" style="margin-top:12px"><button class="btn" data-act="start">탐정 출동!</button></div>
+      <button class="btn gray sm" data-act="reset">기록 지우고 처음부터</button>
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="sMap" style="background:radial-gradient(circle at 50% 30%,#2a6f97,#0d2b45)">
+  <div class="topbar"><span class="pill" id="hello"></span><span class="pill" id="starTot"></span>
+    <button class="btn blue sm" data-act="dex">현상 도감</button></div>
+  <h1 class="title" style="font-size:42px;margin:0 0 4px">사건 지도</h1>
+  <p style="color:#cfe8ff;font-size:19px;margin-bottom:12px">사건마다 수사 방법이 달라요! 8번 사건은 앞의 7개를 모두 해결하면 열려요.</p>
+  <div class="grid" id="caseGrid"></div>
+  <div id="reportBtn" style="margin-top:16px"></div>
+</div>
+
+<div class="screen" id="sCase" style="background:#14202b">
+  <div class="stagebar"><span class="pill" id="cTitle"></span><div class="steps" id="steps"></div><button class="btn gray sm" data-act="exit">지도로</button></div>
+  <div id="stage"></div>
+</div>
+
+<div class="screen" id="sDex" style="background:#0d2b45">
+  <div class="topbar"><h2 style="color:#fff;font-size:34px">이산화 탄소 현상 도감</h2><button class="btn" data-act="map">지도로</button></div>
+  <div class="dex" id="dex"></div>
+</div>
+
+<div class="screen" id="sReport" style="background:radial-gradient(#3b6e8f,#152b3c)">
+  <div class="paper" style="width:min(980px,96%)">
+    <h2 style="font-size:34px">나만의 기후 탐정 보고서</h2>
+    <div class="lbl">① 대표 그림 고르기</div><div class="row" id="stickers" style="gap:8px;justify-content:flex-start"></div>
+    <div class="lbl">② 조사하면서 가장 놀랐던 사실</div>
+    <textarea id="rFact" maxlength="80" placeholder="예) 이산화 탄소가 바다에 녹으면 조개껍데기가 약해진다"></textarea>
+    <div class="lbl">③ 생태계를 지키는 나의 실천 다짐</div>
+    <textarea id="rPledge" maxlength="80" placeholder="예) 가까운 거리는 걸어 다니고 안 쓰는 전등은 끈다"></textarea>
+    <div class="row" style="margin-top:12px"><button class="btn gray" data-act="map">지도로</button><button class="btn blue" data-act="draw">미리보기</button><button class="btn" data-act="save">이미지 저장</button></div>
+    <div style="text-align:center;margin-top:12px"><canvas id="cv" width="1200" height="1700" style="width:440px"></canvas></div>
+  </div>
+</div>
+
+<div class="modal" id="modal"><div class="mcard"><div class="micon" id="mIcon"></div><h2 id="mTitle"></h2><p id="mText"></p><div class="row" id="mBtns"></div></div></div>
+<div id="toast"></div><div id="err"></div>
+
+<script>
+window.onerror=(m,s,l)=>{const e=document.getElementById("err");e.style.display="block";e.textContent="오류: "+m+" (줄 "+l+")"};
+const $=id=>document.getElementById(id);
+let TM=[];const every=(f,t)=>{const h=setInterval(f,t);TM.push(h);return h},after=(f,t)=>{const h=setTimeout(f,t);TM.push(h);return h};
+const clearT=()=>{TM.forEach(h=>{clearInterval(h);clearTimeout(h)});TM=[]};
+const shuf=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function toast(m){const t=$("toast");t.textContent=m;t.style.display="block";clearTimeout(toast.h);toast.h=setTimeout(()=>t.style.display="none",1300)}
+
+/* ===== SVG 아트 ===== */
+const sky=(a,b,id)=>`<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="1000" height="500" fill="url(#${id})"/>`;
+const tree=(x,y,s,c,t)=>`<rect x="${x-8*s}" y="${y}" width="${16*s}" height="${60*s}" fill="${t||'#6d4c41'}"/><circle cx="${x}" cy="${y-10*s}" r="${45*s}" fill="${c}"/><circle cx="${x-28*s}" cy="${y+8*s}" r="${30*s}" fill="${c}"/><circle cx="${x+28*s}" cy="${y+8*s}" r="${30*s}" fill="${c}"/>`;
+const pine=(x,y,s,c)=>`<rect x="${x-6*s}" y="${y}" width="${12*s}" height="${30*s}" fill="#4e342e"/><polygon points="${x},${y-120*s} ${x-50*s},${y} ${x+50*s},${y}" fill="${c}"/><polygon points="${x},${y-150*s} ${x-36*s},${y-60*s} ${x+36*s},${y-60*s}" fill="${c}"/>`;
+function fish(x,y,c){return `<g transform="translate(${x},${y})"><ellipse rx="50" ry="28" fill="${c}"/><polygon points="45,0 80,-25 80,25" fill="${c}"/><rect x="-15" y="-28" width="12" height="56" fill="#fff"/><circle cx="-30" cy="-6" r="6" fill="#222"/></g>`}
+const SCN={
+ sea:()=>sky("#4dd0e1","#0a3d62","g1")+`<ellipse cx="500" cy="540" rx="700" ry="120" fill="#e9d8a6"/>`+[[150,440,"#fafafa"],[330,450,"#f1e9e9"],[620,440,"#fff"],[820,450,"#ffab91"]].map(([x,y,c])=>`<path d="M${x} ${y} q-30 -70 -10 -120 M${x} ${y} q10 -90 40 -130 M${x} ${y} q40 -60 70 -80" stroke="${c}" stroke-width="22" stroke-linecap="round" fill="none"/>`).join("")+fish(700,170,"#ff7043")+fish(250,220,"#ffca28"),
+ farm:()=>sky("#bbdefb","#fff8e1","g2")+`<circle cx="850" cy="90" r="50" fill="#ffeb3b"/><polygon points="0,300 180,120 360,300" fill="#90a4ae"/><polygon points="250,300 480,80 700,300" fill="#78909c"/><path d="M0 300 Q500 220 1000 300 V500 H0z" fill="#81c784"/>`+[150,350,550,750,920].map((x,i)=>tree(x,330+(i%2)*30,.9,"#43a047")+[0,1,2].map(k=>`<circle cx="${x-25+k*25}" cy="${325+(i%2)*30-(k%2)*20}" r="9" fill="#e53935"/>`).join("")).join(""),
+ orchard:()=>sky("#f8bbd0","#fff3e0","g3")+`<circle cx="160" cy="100" r="60" fill="#fff59d"/><path d="M0 330 Q500 260 1000 330 V500 H0z" fill="#9ccc65"/>`+[120,330,560,800].map((x,i)=>tree(x,300+(i%2)*25,1.1,"#f48fb1","#5d4037")).join(""),
+ arctic:()=>sky("#e1f5fe","#b3e5fc","g4")+`<rect y="230" width="1000" height="270" fill="#1565c0"/><path d="M0 240 q250 -20 500 0 t500 0" stroke="#90caf9" stroke-width="6" fill="none"/><polygon points="0,230 120,140 260,230" fill="#fff"/><polygon points="700,230 830,120 1000,230" fill="#eceff1"/>`,
+ mud:o=>{const h=o===2?210:100,m=o===2?400:290;return sky("#ffcc80","#ffe0b2","g5")+`<circle cx="500" cy="150" r="60" fill="#ff7043" opacity=".8"/><rect y="190" width="1000" height="${h+20}" fill="#4fa3d1"/><path d="M0 ${m} Q300 ${m-30} 600 ${m+10} T1000 ${m} V500 H0z" fill="#8d6e63"/>`
+  +(o!==2?[...Array(8)].map((_,i)=>`<ellipse cx="${380+i*60}" cy="${380+(i%3)*35}" rx="14" ry="8" fill="#e53935"/>`).join("")+[0,1,2,3,4].map(i=>`<path d="M${40+i*25} 330 q-5 -50 5 -80" stroke="#827717" stroke-width="7" fill="none"/>`).join(""):"")
+  +[...Array(o===2?1:4)].map((_,i)=>`<path d="M${150+i*120} ${80+(i%2)*30} q15 -15 30 0 q15 -15 30 0" stroke="#333" stroke-width="5" fill="none"/>`).join("")
+  +`<rect x="870" y="150" width="14" height="300" fill="#fff"/>${[0,1,2,3,4,5].map(i=>`<rect x="870" y="${170+i*45}" width="26" height="4" fill="#333"/>`).join("")}<rect x="850" y="${o===2?185:290}" width="55" height="8" fill="#c62828"/>`},
+ forest:()=>sky("#ff8a65","#ffcc80","g6")+`<circle cx="780" cy="110" r="60" fill="#ffeb3b" opacity=".7"/>`+[...Array(6)].map((_,i)=>`<circle cx="${250+i*40}" cy="${170-i*25}" r="${40+i*8}" fill="#795548" opacity=".25"/>`).join("")+`<path d="M0 300 Q500 250 1000 300 V500 H0z" fill="#8d9f4a"/>`,
+ rice:()=>sky("#e3f2fd","#fffde7","g7")+`<circle cx="160" cy="90" r="55" fill="#ffee58"/><path d="M0 240 H1000 V500 H0z" fill="#d4e157"/>`+[...Array(16)].map((_,i)=>`<path d="M${30+i*62} 500 q-6 -60 6 -110" stroke="#9e9d24" stroke-width="6" fill="none"/><ellipse cx="${36+i*62}" cy="390" rx="9" ry="18" fill="#f9a825"/>`).join(""),
+ ant:()=>sky("#0d47a1","#01579b","g8")+`<rect width="1000" height="180" fill="#bbdefb"/><polygon points="80,200 200,90 330,200" fill="#fff"/><polygon points="600,200 720,60 860,200" fill="#e3f2fd"/>`+[...Array(30)].map((_,i)=>`<ellipse cx="${(i*71)%1000}" cy="${260+(i*53)%220}" rx="10" ry="4" fill="#ff8a80" opacity=".8"/>`).join("")
+};
+let U=0;function art(k,a){U++;return `<svg viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid slice">${SCN[k](a).replace(/(id="|#)g(\d)/g,`$1u${U}g$2`)}</svg>`}
+function critter(c,ear,extra){
+ const E={round:`<circle cx="55" cy="45" r="20" fill="${c}"/><circle cx="145" cy="45" r="20" fill="${c}"/>`,fin:`<polygon points="100,20 80,55 120,55" fill="${c}"/>`,
+  petal:[0,72,144,216,288].map(a=>`<circle cx="${100+70*Math.cos(a*Math.PI/180)}" cy="${105+70*Math.sin(a*Math.PI/180)}" r="38" fill="#f8bbd0"/>`).join(""),none:"",hat:""};
+ return `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="200" fill="#e8f4fb"/>${E[ear]}<circle cx="100" cy="110" r="65" fill="${c}"/><ellipse cx="100" cy="135" rx="38" ry="26" fill="#fff" opacity=".55"/><circle cx="78" cy="100" r="13" fill="#fff"/><circle cx="122" cy="100" r="13" fill="#fff"/><circle cx="80" cy="103" r="7" fill="#222"/><circle cx="124" cy="103" r="7" fill="#222"/><circle cx="62" cy="125" r="8" fill="#ff8a80" opacity=".7"/><circle cx="138" cy="125" r="8" fill="#ff8a80" opacity=".7"/><path d="M88 135 q12 -8 24 0" stroke="#5d4037" stroke-width="4" fill="none"/>${ear=="hat"?`<path d="M45 60 Q100 0 155 60z" fill="#5d4037"/><rect x="35" y="56" width="130" height="12" rx="6" fill="#3e2723"/>`:""}${extra||""}</svg>`}
+const OWL=critter("#8d6e63","round",`<circle cx="78" cy="100" r="19" fill="none" stroke="#3e2723" stroke-width="5"/><circle cx="122" cy="100" r="19" fill="none" stroke="#3e2723" stroke-width="5"/><polygon points="92,118 108,118 100,130" fill="#ffa000"/>`);
+const SPR={
+ seal:`<svg viewBox="0 0 120 120"><ellipse cx="62" cy="80" rx="36" ry="20" fill="#78909c"/><circle cx="34" cy="64" r="18" fill="#90a4ae"/><circle cx="28" cy="60" r="3" fill="#111"/><circle cx="39" cy="60" r="3" fill="#111"/><circle cx="33" cy="68" r="3" fill="#333"/></svg>`,
+ bear:`<svg viewBox="0 0 120 120"><circle cx="35" cy="30" r="14" fill="#fff" stroke="#bbb" stroke-width="3"/><circle cx="85" cy="30" r="14" fill="#fff" stroke="#bbb" stroke-width="3"/><circle cx="60" cy="62" r="42" fill="#fff" stroke="#bbb" stroke-width="3"/><circle cx="46" cy="55" r="5"/><circle cx="74" cy="55" r="5"/><ellipse cx="60" cy="74" rx="9" ry="6"/></svg>`,
+ fire:`<svg viewBox="0 0 120 120"><path d="M60 8 C90 40 100 60 92 85 C85 108 35 108 28 85 C22 62 40 50 45 30 C55 45 52 55 60 8z" fill="#ff7043"/><path d="M60 45 C75 65 80 78 74 92 C68 104 52 104 46 92 C42 80 55 70 60 45z" fill="#ffee58"/></svg>`,
+ bug:`<svg viewBox="0 0 120 120">${[0,1,2,3].map(i=>`<circle cx="${25+i*22}" cy="${70-(i%2)*8}" r="16" fill="#7cb342"/>`).join("")}<circle cx="100" cy="58" r="18" fill="#9ccc65"/><circle cx="106" cy="54" r="4" fill="#111"/></svg>`,
+ therm:`<svg viewBox="0 0 120 120"><rect x="50" y="10" width="20" height="80" rx="10" fill="#fff" stroke="#555" stroke-width="4"/><rect x="55" y="35" width="10" height="60" fill="#e53935"/><circle cx="60" cy="98" r="16" fill="#e53935"/></svg>`,
+ coral:`<svg viewBox="0 0 120 120"><path d="M60 115 q-20 -40 -30 -80 M60 115 q0 -50 5 -95 M60 115 q20 -40 35 -75" stroke="#fafafa" stroke-width="14" stroke-linecap="round" fill="none"/></svg>`,
+ shell:`<svg viewBox="0 0 120 120"><path d="M15 95 Q60 5 105 95z" fill="#ffe0b2" stroke="#bcaaa4" stroke-width="4"/><path d="M60 95 V30 M40 95 L52 40 M80 95 L68 40" stroke="#bcaaa4" stroke-width="3"/></svg>`
+};
+const MAG=`<svg viewBox="0 0 120 120"><circle cx="50" cy="50" r="32" fill="#e1f5fe" stroke="#5d4037" stroke-width="10"/><path d="M74 74 L108 108" stroke="#5d4037" stroke-width="16" stroke-linecap="round"/></svg>`;
+const MEDAL=`<svg viewBox="0 0 120 120"><polygon points="35,0 55,0 60,40 40,40" fill="#e53935"/><polygon points="85,0 65,0 60,40 80,40" fill="#1e88e5"/><circle cx="60" cy="75" r="38" fill="#ffc107" stroke="#ff8f00" stroke-width="6"/><polygon points="60,52 67,68 84,70 71,81 75,98 60,89 45,98 49,81 36,70 53,68" fill="#fff8e1"/></svg>`;
+
+/* ===== 데이터 ===== */
+const PH=[["서식지 북상","기온이 오르면 생물이 더 서늘한 북쪽이나 높은 산으로 옮겨 가요. 더 갈 곳이 없는 생물은 사라질 수 있어요."],["생물 계절 엇박자","꽃은 일찍 피는데 곤충이나 철새는 원래대로 움직여서 서로 만나지 못해요."],["극지 얼음 감소","북극 바다 얼음이 줄어들어 북극곰이 사냥할 곳을 잃어요."],["산호 백화","바닷물 온도가 오르면 산호 속 공생 조류가 빠져나가 산호가 하얗게 변하고 굶주려요."],["해양 산성화","CO₂가 바닷물에 직접 녹아 바다가 산성으로 변하면 조개와 플랑크톤이 껍데기를 만들기 어려워요."],["해수면 상승","빙하가 녹고 바닷물이 팽창하면서 갯벌, 습지, 작은 섬이 물에 잠겨요."],["극한 기상","가뭄, 폭염, 폭우, 산불이 잦아져 숲과 생물이 큰 피해를 입어요."],["해충·질병 확산","겨울이 따뜻해져서 해충과 모기가 살아남아 더 넓게 퍼져요."],["식물 성장 변화","CO₂가 많으면 식물이 더 크게 자라기도 하지만, 작물의 영양은 줄고 잡초가 유리해져요."],["먹이그물 연쇄 반응","작은 생물 하나가 줄면 그것을 먹는 생물들이 줄줄이 영향을 받아요."],["되먹임(악순환)","얼어 있던 땅(영구동토)이 녹으면 메탄이 나와 지구가 더 빨리 더워져요."],["생물 다양성 감소","여러 변화가 겹치면 많은 생물이 멸종 위기에 처해요."]];
+const NAMES={talk:"탐문",flash:"잠수 수색",lab:"실험실",chain:"원인 연결",timemap:"시간여행 지도",quiz:"추리",timing:"꽃가루 배달",objection:"이의 있음!",jump:"얼음 점프",diff:"틀린 그림",fire:"긴급 출동",swipe:"판정 스와이프",web:"먹이그물",accuse:"범인 지목"};
+const CASES=[
+ {t:"하얗게 변한 제주 바다",scn:"sea",who:"흰동가리",face:["#ff8a50","fin"],ph:[3,4],hint:"바닷물에 녹아 바다를 산성으로 만든다",st:[
+  ["talk",[["w","알록달록하던 우리 집 산호가 하얗게 변했어요! 조개 친구들 껍데기도 얇아졌대요."],["o","바닷속은 어두워. 손가락으로 화면을 문질러 손전등을 비추고, 단서 3개를 찾아 터치해! 산소가 떨어지기 전에 말이야."]]],
+  ["flash",{time:40,items:[[22,35,"therm","바다 수온계","여름 바닷물 온도가 예전보다 크게 올랐어요."],[60,68,"coral","하얗게 변한 산호","산호 속 공생 조류가 빠져나가 산호가 색과 영양을 잃었어요."],[86,30,"shell","얇아진 조개껍데기","CO₂가 바닷물에 녹아 바다가 산성으로 변했어요."]]}],
+  ["lab",{}],
+  ["chain",{c:["바다가 CO₂와 열을 흡수","수온 상승·바다 산성화","공생 조류 탈출·껍데기 약화","산호 백화"],d:"바닷물이 더 짜짐"}]]},
+ {t:"강원도로 이사 간 사과밭",scn:"farm",who:"사과 농부",face:["#ffcc80","hat"],ph:[0],hint:"지구의 기온을 올린다",st:[
+  ["talk",[["w","옛날엔 대구 사과가 유명했는데, 이젠 사과밭이 자꾸 북쪽으로 올라가요."],["o","기후 지도로 시간여행을 해 보자. 사과가 잘 자라는 곳이 어떻게 바뀌는지 잘 봐!"]]],
+  ["timemap",{}],
+  ["quiz",{q:"사과밭처럼 다른 생물도 서늘한 곳을 찾아 이동해요. 한라산 꼭대기에 사는 구상나무는 어떻게 될까요?",o:["더 북쪽 바다로 이사 간다","더 올라갈 곳이 없어 사라질 위기에 처한다","오히려 더 잘 자란다"],a:1,ex:"구상나무는 이미 산꼭대기에 살아서 더 서늘한 곳으로 갈 수 없어요. 실제로 한라산 구상나무가 말라 죽고 있어요. 남쪽 바다의 아열대 물고기는 우리 바다로 올라오고 있고요."}]]},
+ {t:"꽃은 폈는데 벌이 없다",scn:"orchard",who:"벚꽃 요정",face:["#fff176","petal"],ph:[1],hint:"봄을 앞당겨 생물의 시간표를 흔든다",st:[
+  ["talk",[["w","저는 해마다 점점 일찍 피는데, 꿀벌이 오지 않아요. 열매를 맺을 수가 없어요!"],["o","꿀벌이 되어 꽃가루를 배달해 보자. 해가 갈수록 어떻게 달라지는지 느껴 봐!"]]],
+  ["timing",{}],
+  ["objection",{q:"과수원 사람들의 증언이에요.",l:[["농부","요즘 벚꽃이 예전보다 일찍 펴요."],["양봉가","꿀벌은 꽃 피는 날짜에 딱 맞춰 깨어나니까 아무 문제 없어요."],["새 박사","철새가 도착하면 이미 먹이인 애벌레가 줄어 있어요."]],a:1,ex:"꿀벌이 깨어나는 시기는 꽃만큼 빨리 당겨지지 않아서 서로 어긋나요. 이것이 생물 계절 엇박자예요."}]]},
+ {t:"굶주린 북극곰",scn:"arctic",who:"북극곰",face:["#fafafa","round"],ph:[2,10],hint:"얼음을 녹이고 악순환을 일으킨다",st:[
+  ["talk",[["w","물범은 얼음 위에서 쉬어요. 그런데 얼음이 너무 빨리 녹아서 사냥을 못 해요!"],["o","얼음판을 터치해서 건너가며 물범을 4마리 사냥해 봐. 발밑 얼음이 녹으면 풍덩!"],["o","참, 북극의 얼어 있던 땅(영구동토)이 녹으면 메탄 가스가 나와서 지구를 더 덥게 만든대."]]],
+  ["jump",{}],
+  ["chain",{loop:1,c:["CO₂ 증가로 기온 상승","얼음과 영구동토가 녹음","메탄 방출·햇빛 반사 감소","더 빠른 온난화"],d:"물범이 많아짐"}]]},
+ {t:"잠기는 갯벌",scn:"mud",who:"도요새",face:["#bcaaa4","none",`<polygon points="100,118 140,125 100,132" fill="#ff8f00"/>`],ph:[5],hint:"바닷물 높이를 높인다",st:[
+  ["talk",[["w","먼 길을 날다 쉬어 가는 갯벌이 점점 물에 잠기고 있어요!"],["o","1980년과 2050년 갯벌 그림이야. 오른쪽 그림에서 달라진 곳 4군데를 찾아 터치해!"]]],
+  ["diff",{}],
+  ["quiz",{q:"갯벌을 삼킨 바닷물은 왜 높아졌을까요?",o:["비가 많이 와서","빙하가 녹은 물이 흘러들고, 따뜻해진 바닷물의 부피가 늘어서","갯벌 진흙이 바다로 쓸려 가서"],a:1,ex:"기온이 오르면 빙하가 녹고 바닷물이 팽창해서 해수면이 높아져요. 그래서 갯벌과 습지 생물이 살 곳을 잃어요."}]]},
+ {t:"불타고 병드는 숲",scn:"forest",who:"고라니",face:["#a1887f","round"],ph:[6,7],hint:"가뭄과 따뜻한 겨울을 부른다",st:[
+  ["talk",[["w","비가 안 오더니 큰 산불이 났어요! 겨울을 버틴 벌레들도 나무를 갉아먹어요."],["o","긴급 출동! 불과 해충을 터치해서 숲을 지켜. 불은 옆 나무로 번지니까 서둘러!"]]],
+  ["fire",{}],
+  ["chain",{c:["CO₂ 증가로 기후 변화","가뭄과 따뜻한 겨울","산불·해충 증가","숲 생태계 피해"],d:"나무가 더 단단해짐"}]]},
+ {t:"커졌는데 맛이 없다?",scn:"rice",who:"농업 연구원",face:["#ffe0b2","hat"],ph:[8],hint:"식물이 광합성할 때 쓰는 재료다",st:[
+  ["talk",[["w","CO₂가 많아지니 벼가 쑥쑥 컸는데, 쌀의 영양은 줄었어요. 좋은 걸까요, 나쁜 걸까요?"],["o","카드를 보고 좋은 점과 걱정되는 점을 빠르게 판정해 보자!"]]],
+  ["swipe",{c:[["벼가 더 크게 자란다","g","CO₂는 광합성 재료라서 더 크게 자랄 수 있어요."],["쌀 속 단백질과 철분이 줄어든다","b","영양이 줄어드는 건 걱정이에요."],["광합성이 더 활발해진다","g","광합성 재료가 늘어나니까요."],["잡초가 작물보다 더 무성해진다","b","잡초가 유리해지는 건 걱정이에요."],["해충이 영양을 채우려고 잎을 더 많이 먹는다","b","영양이 적은 잎을 더 많이 갉아먹어요."],["일부 식물은 물을 덜 쓰고도 자란다","g","잎의 숨구멍을 덜 열어도 되기 때문이에요."]]}],
+  ["objection",{q:"농업 연구 회의에서 나온 증언이에요.",l:[["연구원 A","CO₂가 늘면 벼가 더 빨리 자랄 수 있어요."],["연구원 B","하지만 쌀의 영양소는 줄어들 수 있어요."],["연구원 C","CO₂가 늘면 식물에게 좋은 일만 생기니 걱정할 필요가 없어요."],["연구원 D","잡초가 작물보다 더 잘 자랄 수도 있어요."]],a:2,ex:"CO₂가 늘면 식물이 더 자라기도 하지만, 영양 감소와 잡초 증가 같은 문제도 함께 생겨요."}]]},
+ {t:"최종 사건: 연결된 범인",scn:"ant",who:"펭귄",face:["#37474f","none",`<ellipse cx="100" cy="140" rx="40" ry="28" fill="#fff"/><polygon points="92,118 108,118 100,128" fill="#ffa000"/>`],ph:[9,11],st:[
+  ["talk",[["w","우리 먹이인 크릴이 줄었어요. 크릴을 먹는 친구들도 배고프대요!"],["o","크릴은 바다 얼음 아래에서 자라. 얼음이 줄고 바다가 산성화되면서 크릴이 줄었지. 누가 영향을 받는지 찾아보자."]]],
+  ["web",{}],
+  ["accuse",{}]]}
+];
+const NEWS=[["CO₂가 바닷물에 녹으면 바다가 산성으로 변한다",1,"맞아요! 이것이 해양 산성화예요."],["CO₂가 늘면 식물에게는 좋은 점만 있다",0,"아니에요. 작물의 영양이 줄고 잡초가 유리해져요."],["산호가 하얗게 변하는 것은 바닷물이 차가워져서다",0,"아니에요. 수온이 올라서예요."],["기온이 오르면 생물은 대체로 북쪽이나 높은 곳으로 옮겨 간다",1,"맞아요! 서식지 북상이에요."],["영구동토가 녹으면 메탄이 나와 온난화가 더 빨라진다",1,"맞아요! 악순환이에요."],["해수면 상승은 빙하가 녹은 물 때문만이다",0,"바닷물이 따뜻해져 부피가 늘어나는 것도 원인이에요."],["따뜻한 겨울은 해충이 살아남기 쉽게 만든다",1,"맞아요!"],["작은 크릴이 줄어도 고래에게는 영향이 없다",0,"고래는 크릴을 먹고 살아요!"],["꽃이 일찍 피면 꿀벌과 만나지 못할 수 있다",1,"맞아요! 생물 계절 엇박자예요."]];
+
+/* ===== 상태 ===== */
+let S;try{S=JSON.parse(localStorage.getItem("ecoDet3"))}catch(e){}
+S=Object.assign({name:"",done:[],stars:{},bonus:0,news:[]},S||{});
+let cur=0,C=null,si=0,mist=0,sticker=0;
+const save=()=>{try{localStorage.setItem("ecoDet3",JSON.stringify(S))}catch(e){}};
+const face=c=>critter(c.face[0],c.face[1],c.face[2]);
+const totalStars=()=>Object.values(S.stars).reduce((a,b)=>a+b,0)+(S.bonus||0);
+function go(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("on"));$(id).classList.add("on")}
+function modal(icon,title,text,btns){$("mIcon").innerHTML=icon||"";$("mTitle").innerHTML=title;$("mText").innerHTML=text;
+ const b=$("mBtns");b.innerHTML="";btns.forEach(([l,f,c])=>{const e=document.createElement("button");e.className="btn "+(c||"");e.textContent=l;
+  e.addEventListener("click",()=>{$("modal").classList.remove("on");if(f)f()});b.appendChild(e)});$("modal").classList.add("on")}
+const add=(cls,html)=>{const d=document.createElement("div");d.className=cls;d.innerHTML=html;$("stage").appendChild(d);return d};
+const hud=h=>add("hudrow",h),paper=h=>add("paper",h);
+function box(k,cls,a){const b=document.createElement("div");b.className="box "+(cls||"");b.innerHTML=art(k,a);$("stage").appendChild(b);return b}
+
+document.addEventListener("click",e=>{const t=e.target.closest("[data-act]");if(!t)return;
+ ({start:begin,reset:resetAll,map:()=>{renderMap();go("sMap")},dex:showDex,draw:()=>drawReport(),save:download,
+   exit:()=>modal(MAG,"수사를 멈출까요?","지금 사건은 처음부터 다시 해야 해요.",[["계속 수사","","blue"],["지도로",()=>{clearT();renderMap();go("sMap")},"gray"]])})[t.dataset.act]()});
+
+$("titleBg").innerHTML=SCN.sea();$("mascot").innerHTML=OWL;$("nameIn").value=S.name||"";
+function resetAll(){if(confirm("저장된 진행 기록을 모두 지울까요?")){S={name:"",done:[],stars:{},bonus:0,news:[]};save();$("nameIn").value=""}}
+function begin(){const n=$("nameIn").value.trim();if(!n){$("nameIn").classList.add("shake");setTimeout(()=>$("nameIn").classList.remove("shake"),400);return}
+ S.name=n;save();renderMap();go("sMap");
+ if(!S.done.length)modal(OWL,"부엉 반장: 반가워, "+n+" 탐정!","전국과 세계 곳곳에서 생물들이 사라지는 사건이 일어나고 있어. 사건마다 수사 방법이 달라! 사건을 풀 때마다 <b>범인의 단서</b>가 모이니까, 마지막에 진짜 범인을 밝혀내자!",[["좋아요!"]])}
+
+function renderMap(){$("hello").textContent=S.name+" 탐정";$("starTot").textContent="★ "+totalStars()+" · 해결 "+S.done.length+"/8";
+ const g=$("caseGrid");g.innerHTML="";
+ CASES.forEach((c,i)=>{const lock=i==7&&S.done.filter(x=>x<7).length<7,d=document.createElement("div");d.className="case"+(lock?" lock":"");const s=S.stars[i]||0;
+  d.innerHTML=art(c.scn)+`<div class="nm">${lock?"🔒 ":""}${i+1}. ${c.t}</div><div class="st">${s?"★".repeat(s)+"☆".repeat(3-s):NAMES[c.st[1][0]]}</div>`+(S.done.includes(i)?'<div class="stamp">해결!</div>':"");
+  d.addEventListener("click",()=>lock?modal(MAG,"아직 잠겨 있어요","앞의 사건 7개를 모두 해결하면 열려요!",[["확인"]]):openCase(i));g.appendChild(d)});
+ $("reportBtn").innerHTML=S.done.length>=8?'<button class="btn big" id="goRep">최종 보고서 만들기</button>':"";
+ if($("goRep"))$("goRep").addEventListener("click",openReport)}
+
+/* ===== 스테이지 엔진 ===== */
+function openCase(i){cur=i;C=CASES[i];si=0;mist=0;$("cTitle").textContent="#"+(i+1)+" "+C.t;go("sCase");runStage()}
+function runStage(){clearT();$("stage").innerHTML="";
+ $("steps").innerHTML=C.st.map((s,i)=>`<span class="step ${i<si?"ok":i==si?"now":""}">${NAMES[s[0]]}</span>`).join("");
+ let used=false;const st=C.st[si];T[st[0]](st[1],()=>{if(used)return;used=true;si++;si<C.st.length?runStage():solve()})}
+const T={};
+
+T.talk=(L,nx)=>{const b=box(C.scn);b.insertAdjacentHTML("beforeend",`<div class="banner">사건 #${cur+1} ${C.t}</div><div class="dlg"><div class="pf"></div><div style="flex:1"><div class="dname"></div><div class="dtx"></div></div></div>`);
+ const d=b.querySelector(".dlg"),tx=d.querySelector(".dtx");let k=0,full,ty;
+ const show=()=>{const[w,t]=L[k];d.querySelector(".pf").innerHTML=w=="o"?OWL:face(C);d.querySelector(".dname").textContent=w=="o"?"부엉 반장":C.who;let n=0;full=false;clearInterval(ty);
+  ty=every(()=>{n++;tx.textContent=t.slice(0,n);if(n>=t.length){full=true;clearInterval(ty)}},28)};
+ d.onclick=()=>{if(!full){clearInterval(ty);tx.textContent=L[k][1];full=true;return}k++;k<L.length?show():nx()};show()};
+
+T.flash=(o,nx)=>{hud(`<span class="pill">산소 <b id="oxy">${o.time}</b>초</span><span class="pill">단서 <b id="fc">0</b>/3</span>`);
+ const b=box("sea","nt");let found=0,t=o.time,pause=false,lx=50,ly=50;
+ o.items.forEach(it=>{const e=document.createElement("button");e.className="obj";e.style.left=it[0]+"%";e.style.top=it[1]+"%";e.innerHTML=SPR[it[2]];
+  e.onclick=()=>{if(e.classList.contains("got"))return;e.classList.add("got");found++;$("fc").textContent=found;pause=true;
+   modal(SPR[it[2]],"단서 발견! "+it[3],it[4],[["수첩에 기록",()=>{pause=false;if(found>=3)nx()}]])};b.appendChild(e)});
+ const dk=document.createElement("div");dk.className="dark";b.appendChild(dk);
+ const paint=()=>dk.style.background=`radial-gradient(circle at ${lx}% ${ly}%,transparent 0 80px,#000d 140px,#000 260px)`;paint();
+ const mv=e=>{const r=b.getBoundingClientRect();lx=(e.clientX-r.left)/r.width*100;ly=(e.clientY-r.top)/r.height*100;paint()};
+ b.addEventListener("pointermove",mv);b.addEventListener("pointerdown",mv,true);
+ add("hint","화면을 손가락으로 문지르면 손전등이 따라와요");
+ every(()=>{if(pause)return;t--;$("oxy").textContent=t;if(t<=0){mist++;pause=true;modal(MAG,"산소 부족!","수면으로 올라가 산소를 채웠어요. 다시 잠수!",[["다시 잠수",()=>{t=o.time;pause=false}]])}},1000)};
+
+T.lab=(o,nx)=>{paper(`<h2>CO₂ 실험실</h2><p style="font-size:21px">슬라이더를 밀어 바다에 녹는 CO₂를 늘려 보세요. 산호와 조개에 무슨 일이 생길까요?</p>
+ <div class="row" style="gap:20px;align-items:stretch"><div style="width:400px;max-width:100%" id="labv"></div><div style="flex:1;min-width:220px;font-size:22px;line-height:1.8" id="labr"></div></div>
+ <input type="range" id="lab" min="280" max="800" value="280"><div class="row"><button class="btn" id="labok" disabled>관찰 완료</button></div>`);
+ const up=()=>{const v=+$("lab").value,t=(v-280)/520,cc=`hsl(${12-12*t},${85-80*t}%,${58+38*t}%)`,wc=`hsl(${195-20*t},70%,${45-10*t}%)`;
+  $("labv").innerHTML=`<svg viewBox="0 0 420 260"><rect width="420" height="260" rx="20" fill="${wc}"/><path d="M140 240 q-30 -70 -10 -130 M140 240 q10 -90 40 -140 M140 240 q40 -60 70 -90" stroke="${cc}" stroke-width="24" stroke-linecap="round" fill="none"/><path d="M260 230 Q320 130 380 230z" fill="#ffe0b2" stroke="#8d6e63" stroke-width="${14-12*t}"/>${t<.5?[0,1,2,3].map(i=>`<circle cx="${110+i*30}" cy="${150+(i%2)*40}" r="6" fill="#8bc34a"/>`).join(""):""}</svg>`;
+  const msg=t<.3?"산호가 건강해요. 초록 점은 산호 속 공생 조류예요.":t<.6?"수온이 올라 조류가 산호를 떠나기 시작해요!":"산호가 하얗게 변했어요(백화). 바닷물이 산성으로 변해 조개껍데기도 얇아졌어요!";
+  $("labr").innerHTML=`CO₂: <b>${v}ppm</b><br>수온: <b>${(20+3.5*t).toFixed(1)}℃</b><br>바닷물 pH: <b>${(8.2-.4*t).toFixed(2)}</b> (작을수록 산성)<br><span style="color:#c62828">${msg}</span>`;
+  if(v>=650)$("labok").disabled=false};
+ $("lab").oninput=up;up();$("labok").onclick=nx};
+
+T.timemap=(o,nx)=>{paper(`<h2>기후 지도 시간여행</h2><p style="font-size:21px">시간 막대를 밀어서 사과가 잘 자라는 지역(빨간 띠)이 어떻게 움직이는지 관찰하세요.</p>
+ <div class="row" style="gap:20px"><svg viewBox="0 0 300 480" style="width:220px;background:#bbdefb;border-radius:16px" id="km"></svg><div style="flex:1;min-width:240px;font-size:24px;line-height:1.7" id="kmr"></div></div>
+ <input type="range" id="yr" min="1970" max="2070" step="10" value="1970"><div class="row"><button class="btn" id="kmok" disabled>관찰 완료</button></div>`);
+ const sh="120,20 200,30 230,120 250,250 230,380 200,460 120,470 90,400 100,300 70,200 90,100";
+ const up=()=>{const y=+$("yr").value,k=(y-1970)/100,by=360-k*250;
+  $("km").innerHTML=`<defs><clipPath id="kc"><polygon points="${sh}"/></clipPath></defs><polygon points="${sh}" fill="#a5d6a7" stroke="#2e7d32" stroke-width="4"/><rect y="${by-35}" width="300" height="70" fill="#e53935" opacity=".6" clip-path="url(#kc)"/><circle cx="190" cy="355" r="7"/><text x="200" y="350" font-size="20">대구</text><circle cx="140" cy="110" r="7"/><text x="150" y="105" font-size="20">철원</text><text x="14" y="40" font-size="30" font-family="Jua">${y}</text>`;
+  $("kmr").innerHTML=`<b>${y}년</b><br>사과 재배 중심지: <b>${k<.3?"대구·경북":k<.6?"충북·경기":"강원도"}</b><br>${k>.7?'<span style="color:#c62828">남쪽은 너무 더워져서 사과가 잘 자라지 않아요!</span>':""}`;
+  if(y>=2070)$("kmok").disabled=false};
+ $("yr").oninput=up;up();$("kmok").onclick=nx};
+
+T.quiz=(o,nx)=>{paper(`<h2>추리 타임</h2><p style="font-size:24px;margin:10px 0">${o.q}</p><div id="qo"></div><p id="qh" style="color:#c62828;font-size:20px;min-height:28px"></p>`);
+ o.o.forEach((t,i)=>{const b=document.createElement("button");b.className="btn blue qbtn";b.textContent=t;
+  b.onclick=()=>{if(i==o.a)modal(MEDAL,"정답!",o.ex,[["다음",nx]]);else{mist++;b.disabled=true;$("qh").textContent="다시 생각해 보세요!"}};$("qo").appendChild(b)})};
+
+T.objection=(o,nx)=>{paper(`<h2 style="color:#c62828">증언 심문</h2><p style="font-size:21px">${o.q} <b>거짓 증언</b>을 찾아 "이의 있음!"을 누르세요.</p><div id="ob"></div>`);
+ o.l.forEach(([w,t],i)=>{const d=document.createElement("div");d.style.cssText="display:flex;gap:12px;align-items:center;background:#fff;border-radius:16px;padding:10px 14px;margin:8px 0";
+  d.innerHTML=`<div style="flex:1;font-size:21px"><b>${w}:</b> "${t}"</div>`;const b=document.createElement("button");b.className="btn red sm";b.textContent="이의 있음!";
+  b.onclick=()=>{if(i==o.a)modal('<div style="font-family:Jua;font-size:64px;color:#c62828;transform:rotate(-8deg)">이의 있음!</div>',"거짓 증언을 밝혀냈어요!",o.ex,[["다음",nx]]);
+   else{mist++;d.classList.add("shake");b.disabled=true;b.textContent="사실이에요"}};d.appendChild(b);$("ob").appendChild(d)})};
+
+T.chain=(o,nx)=>{paper(`<h2>원인 사슬 연결</h2><p style="font-size:21px">${o.loop?"<b>악순환 고리</b>를 완성하세요! 마지막 칸은 다시 처음으로 이어져요.":"카드를 <b>일어나는 순서대로</b> 터치하세요."} 관계없는 카드가 하나 섞여 있어요!</p><div class="slots" id="sl"></div><div class="slots" id="ch"></div><p id="chh" style="color:#c62828;text-align:center;font-size:20px;min-height:28px"></p>`);
+ let k=1;o.c.forEach((s,i)=>{if(i)$("sl").insertAdjacentHTML("beforeend",'<div class="arrow">➜</div>');$("sl").insertAdjacentHTML("beforeend",`<div class="slot ${i?"":"start"}" id="s${i}">${i?"?":s}</div>`)});
+ if(o.loop)$("sl").insertAdjacentHTML("beforeend",'<div class="arrow">↩ 처음으로</div>');
+ shuf([...o.c.slice(1),o.d]).forEach(s=>{const e=document.createElement("div");e.className="chip";e.textContent=s;
+  e.onclick=()=>{if(s===o.c[k]){$("s"+k).textContent=s;$("s"+k).classList.add("fill");e.classList.add("used");k++;$("chh").textContent="";if(k>=o.c.length)after(nx,700)}
+   else{mist++;e.classList.add("shake");after(()=>e.classList.remove("shake"),400);$("chh").textContent=s===o.d?"이번 사건과 관계없는 카드예요!":"순서가 달라요!"}};$("ch").appendChild(e)})};
+
+T.timing=(o,nx)=>{const R=[[1980,30,60,32,62],[2000,22,52,34,64],[2020,14,44,35,65],[2050,8,38,36,66]];
+ hud(`<span class="pill" id="tyr"></span><span class="pill">배달 성공 <b id="tok">0</b>/4</span>`);
+ paper(`<p style="font-size:21px">검은 막대가 <b style="color:#d81b60">꽃 피는 기간(분홍)</b>과 <b style="color:#f9a825">꿀벌 활동 기간(노랑)</b>이 <b>겹치는 곳</b>에 왔을 때 버튼을 누르세요!</p>
+ <div style="position:relative;height:120px;background:#e0e0e0;border-radius:16px;margin:16px 0;overflow:hidden"><div id="fl" style="position:absolute;top:0;height:50%;background:#f48fb1"></div><div id="be" style="position:absolute;bottom:0;height:50%;background:#ffd54f"></div><div id="cu" style="position:absolute;top:0;bottom:0;width:8px;background:#3e2723"></div></div>
+ <div class="row" style="justify-content:space-between;font-size:18px"><span>3월</span><span>4월</span><span>5월</span></div><div class="row"><button class="btn big" id="tb">꽃가루 배달!</button></div><p id="tm" style="text-align:center;font-size:20px;min-height:28px"></p>`);
+ let r=0,ok=0,pos=0,dir=1,miss=0;
+ const set=()=>{const[y,a,b,c,d]=R[r];$("tyr").textContent=y+"년 봄";$("fl").style.left=a+"%";$("fl").style.width=(b-a)+"%";$("be").style.left=c+"%";$("be").style.width=(d-c)+"%";miss=0};set();
+ every(()=>{pos+=dir*(1.1+r*.4);if(pos>=99){pos=99;dir=-1}if(pos<=0){pos=0;dir=1}$("cu").style.left=pos+"%"},30);
+ const next=m=>{$("tm").textContent=m;r++;if(r>=R.length){clearT();modal(face(C),"배달 결과",`4번 중 ${ok}번 성공했어요.<br>해가 갈수록 꽃이 일찍 피어서 꿀벌과 만나는 기간이 줄어들었죠? 이것이 <b>생물 계절 엇박자</b>예요.`,[["다음",nx]])}else set()};
+ $("tb").onclick=()=>{const[y,a,b,c,d]=R[r];if(pos>=Math.max(a,c)&&pos<=Math.min(b,d)){ok++;$("tok").textContent=ok;next("성공! 다음 해로...")}
+  else{miss++;$("tm").textContent="꽃과 벌이 만나지 못했어요! ("+miss+"/3)";if(miss>=3){mist++;next("이번 해는 열매를 맺지 못했어요...")}}}};
+
+T.jump=(o,nx)=>{hud(`<span class="pill">남은 시간 <b id="jt">35</b>초</span><span class="pill">사냥 <b id="js">0</b>/4</span><span class="pill" id="jy">2000년</span>`);
+ const b=box("arctic","nt"),lay=document.createElement("div");lay.style.cssText="position:absolute;inset:0";b.appendChild(lay);
+ const mk=s=>({x:10+Math.random()*80,y:55+Math.random()*33,s:s||100+Math.random()*40});
+ let F=[...Array(6)].map(()=>mk()),bear=0,seal=-1,sc=0,t=35,yr=2000,over=false;
+ const draw=()=>{lay.innerHTML=F.map((f,i)=>`<div data-i="${i}" style="position:absolute;left:${f.x}%;top:${f.y}%;width:${f.s*1.6}px;height:${f.s*.7}px;transform:translate(-50%,-50%);background:#fff;border-radius:40%;box-shadow:0 8px 0 #81d4fa">${i==bear?`<div style="position:absolute;left:50%;bottom:25%;transform:translateX(-50%);width:80px;height:80px;pointer-events:none">${SPR.bear}</div>`:i==seal?`<div style="position:absolute;left:50%;bottom:10%;transform:translateX(-50%);width:76px;height:76px;pointer-events:none">${SPR.seal}</div>`:""}</div>`).join("")};
+ const end=w=>{if(over)return;over=true;clearT();if(!w)mist++;modal(SPR.seal,w?"사냥 성공!":"시간 초과!",`물범 ${sc}마리를 잡았어요.<br>해가 지날수록 얼음판이 빨리 녹고 작아져서 건너기 어려웠죠? 실제 북극곰도 사냥터를 잃고 굶주리고 있어요.`,[["다음",nx]])};
+ lay.addEventListener("pointerdown",e=>{const d=e.target.closest("[data-i]");if(!d||over)return;const i=+d.dataset.i;if(i==bear)return;bear=i;
+  if(i==seal){sc++;$("js").textContent=sc;seal=-1;toast("물범 사냥!");if(sc>=4)end(true)}draw()});
+ every(()=>{const melt=.6+(yr-2000)/40;F.forEach((f,i)=>{f.s-=melt*(.5+Math.random());if(f.s<45){
+   if(i==bear){mist++;let m=-1;F.forEach((g,j)=>{if(j!=i&&(m<0||g.s>F[m].s))m=j});bear=m;toast("풍덩! 얼음이 녹았어요")}
+   if(i==seal)seal=-1;F[i]=mk(Math.max(60,130-(yr-2000)))}});
+  if(seal<0&&Math.random()<.1){const c=F.map((_,j)=>j).filter(j=>j!=bear);seal=c[Math.floor(Math.random()*c.length)]}draw()},250);
+ every(()=>{t--;yr+=2;$("jt").textContent=t;$("jy").textContent=yr+"년";if(t<=0)end(false)},1000);draw();
+ add("hint","다른 얼음판을 터치하면 북극곰이 점프해요. 물범이 있는 얼음판으로 가세요!")};
+
+T.diff=(o,nx)=>{hud(`<span class="pill">찾은 차이 <b id="dc">0</b>/4</span>`);
+ const w=add("row","");w.style.cssText="gap:10px;width:100%;flex-wrap:nowrap";
+ const mkb=(v,l)=>{const b=document.createElement("div");b.className="box";b.style.width="49%";b.innerHTML=art("mud",v)+`<div class="pill" style="position:absolute;left:8px;top:8px">${l}</div>`;w.appendChild(b);return b};
+ mkb(1,"1980년");const b=mkb(2,"2050년 (여기서 찾기)");
+ const D=[[55,72,"갯벌이 바닷물에 잠겼어요"],[28,18,"쉬어 가던 철새가 줄었어요"],[9,58,"갈대 습지가 사라졌어요"],[88,40,"해수면 눈금이 높아졌어요"]];let f=0,cool=0;
+ b.addEventListener("pointerdown",e=>{const r=b.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*100,y=(e.clientY-r.top)/r.height*100;
+  const k=D.findIndex(d=>!d.f&&Math.hypot(x-d[0],(y-d[1])/2)<12);
+  if(k<0){if(Date.now()>cool){mist++;cool=Date.now()+1500;toast("거기는 똑같아요!")}return}
+  D[k].f=1;f++;$("dc").textContent=f;toast(D[k][2]);
+  b.insertAdjacentHTML("beforeend",`<div style="position:absolute;left:${D[k][0]}%;top:${D[k][1]}%;width:18%;aspect-ratio:1;transform:translate(-50%,-50%);border:6px solid #e53935;border-radius:50%;pointer-events:none"></div>`);
+  if(f>=4)after(()=>modal(MEDAL,"모두 찾았어요!","바닷물이 높아지면서 갯벌과 습지가 잠기고, 게가 살 곳과 철새가 쉴 곳이 사라졌어요.",[["다음",nx]]),800)})};
+
+T.fire=(o,nx)=>{hud(`<span class="pill">남은 시간 <b id="ft">30</b>초</span><span class="pill" id="fy">2000년</span><span class="pill">건조도 <b id="fd">20</b>%</span><span class="pill" style="background:#c62828">피해 나무 <b id="fb">0</b></span>`);
+ const b=box("forest","nt"),lay=document.createElement("div");lay.style.cssText="position:absolute;inset:0";b.appendChild(lay);
+ const TR=`<svg viewBox="0 0 120 120"><rect x="54" y="80" width="12" height="35" fill="#5d4037"/><polygon points="60,5 15,90 105,90" fill="#2e7d32"/></svg>`,DEAD=`<svg viewBox="0 0 120 120"><rect x="54" y="40" width="12" height="75" fill="#3e2723"/><path d="M60 60 l-25 -20 M60 75 l25 -18" stroke="#3e2723" stroke-width="8"/></svg>`;
+ const G=[];for(let r=0;r<2;r++)for(let c=0;c<6;c++)G.push({x:10+c*16,y:50+r*30,s:0,t:0});
+ const paint=g=>g.el.innerHTML=(g.s==3?DEAD:TR)+(g.s==1?`<div style="position:absolute;inset:-10% 10% 20%">${SPR.fire}</div>`:g.s==2?`<div style="position:absolute;inset:40% 0 0 30%">${SPR.bug}</div>`:"");
+ G.forEach((g,i)=>{const d=document.createElement("div");d.dataset.i=i;d.style.cssText=`position:absolute;left:${g.x}%;top:${g.y}%;width:14%;aspect-ratio:1;transform:translate(-50%,-50%)`;d.querySelectorAll;g.el=d;lay.appendChild(d);paint(g)});
+ let t=30,yr=2000,dry=20,dead=0,over=false;
+ lay.addEventListener("pointerdown",e=>{const d=e.target.closest("[data-i]");if(!d)return;const g=G[d.dataset.i];if(g.s==1||g.s==2){g.s=0;paint(g)}});
+ const kill=g=>{g.s=3;dead++;$("fb").textContent=dead;paint(g)};
+ every(()=>{const now=Date.now();
+  G.forEach((g,i)=>{if(g.s==1&&now-g.t>3000){kill(g);[i-1,i+1,i-6,i+6].forEach(j=>{const n=G[j];if(n&&n.s==0&&Math.abs(n.x-g.x)<20){n.s=1;n.t=now;paint(n)}})}
+   else if(g.s==2&&now-g.t>4000)kill(g)});
+  if(Math.random()<dry/250){const c=G.filter(g=>g.s==0);if(c.length){const g=c[Math.floor(Math.random()*c.length)];g.s=Math.random()<.6?1:2;g.t=now;paint(g)}}},200);
+ every(()=>{t--;yr+=3;dry=Math.min(95,dry+2.5);$("ft").textContent=t;$("fy").textContent=yr+"년";$("fd").textContent=Math.round(dry);
+  if(!over&&(t<=0||G.every(g=>g.s==3))){over=true;clearT();mist+=Math.floor(dead/3);modal(SPR.fire,"출동 종료!",`피해 나무 ${dead}그루.<br>시간이 지날수록 가뭄으로 숲이 건조해져 불이 자주 났고, 따뜻한 겨울을 견딘 해충까지 늘어서 정신없었죠?`,[["다음",nx]])}},1000);
+ add("hint","불과 애벌레를 터치하세요! 불은 3초 뒤 옆 나무로 번져요.")};
+
+T.swipe=(o,nx)=>{hud(`<span class="pill">콤보 <b id="cb">0</b></span><span class="pill"><b id="sn">1</b>/${o.c.length}</span>`);
+ paper(`<p style="font-size:21px;text-align:center">CO₂가 많아졌을 때 식물에게 생기는 일이에요. <b>좋은 점</b>이면 오른쪽, <b>걱정되는 점</b>이면 왼쪽으로 밀거나 버튼을 누르세요!</p>
+ <div style="height:14px;background:#ddd;border-radius:7px;margin:10px 0;overflow:hidden"><div id="sbar" style="height:100%;background:#ff7043;width:100%"></div></div>
+ <div id="card" style="margin:10px auto;width:min(520px,100%);min-height:170px;background:#fff;border:5px solid #8d5524;border-radius:24px;display:flex;align-items:center;justify-content:center;text-align:center;font-family:Jua;font-size:30px;padding:20px;transition:transform .25s,opacity .25s;touch-action:none"></div>
+ <div class="row"><button class="btn red" id="swl">← 걱정되는 점</button><button class="btn blue" id="swr">좋은 점 →</button></div>`);
+ let i=0,cb=0,tl=7000,x0=null,lock=false;const cd=$("card");
+ const show=()=>{cd.style.transform="";cd.style.opacity=1;cd.textContent=o.c[i][0];$("sn").textContent=i+1;tl=7000;lock=false};
+ const ans=s=>{if(lock||i>=o.c.length)return;lock=true;const ok=s===o.c[i][1];
+  cd.style.transform=s?`translateX(${s=="g"?300:-300}px) rotate(${s=="g"?15:-15}deg)`:"scale(.8)";cd.style.opacity=0;
+  if(ok){cb++;toast(cb>=3?cb+" 콤보!":"정답!")}else{mist++;cb=0;toast((s?"땡! ":"시간 초과! ")+o.c[i][2])}$("cb").textContent=cb;i++;
+  if(i>=o.c.length){clearT();after(()=>modal(MEDAL,"판정 완료!","CO₂가 늘면 식물이 더 크게 자라기도 하지만, <b>작물의 영양은 줄고 잡초가 유리</b>해져요. 좋은 점만 있는 건 아니랍니다!",[["다음",nx]]),1300)}else after(show,1300)};
+ $("swl").onclick=()=>ans("b");$("swr").onclick=()=>ans("g");
+ cd.onpointerdown=e=>x0=e.clientX;cd.onpointerup=e=>{if(x0!=null){const dx=e.clientX-x0;if(Math.abs(dx)>60)ans(dx>0?"g":"b")}x0=null};
+ every(()=>{if(lock)return;tl-=100;$("sbar").style.width=Math.max(0,tl/70)+"%";if(tl<=0)ans(null)},100);show()};
+
+T.web=(o,nx)=>{hud(`<span class="pill">배고파진 생물 <b id="wc">0</b>/4</span>`);
+ const b=box("ant");b.insertAdjacentHTML("beforeend",'<svg id="wl" viewBox="0 0 1000 500" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"></svg>');
+ const N=[["크릴",50,80,0],["펭귄",18,38,1],["고래",82,38,1],["물범",35,16,1],["오징어",65,16,1],["북극곰",10,78,0,"북극곰은 북극에 살아서 남극 크릴과는 관계없어요!"],["선인장",90,78,0,"선인장은 사막 식물이에요!"]];let f=0;
+ N.forEach(n=>{const d=document.createElement("button");d.style.cssText=`position:absolute;left:${n[1]}%;top:${n[2]}%;transform:translate(-50%,-50%);width:120px;height:120px;border-radius:50%;border:6px solid #fff;background:${n[0]=="크릴"?"#ff8a80":"#ffffffdd"};font-family:Jua;font-size:25px;color:#0d47a1;z-index:2`;d.textContent=n[0];
+  d.onclick=()=>{if(n[0]=="크릴"||d.disabled)return;d.disabled=true;
+   if(n[3]){f++;$("wc").textContent=f;d.style.background="#ffcc80";d.textContent=n[0]+" 배고파!";d.style.fontSize="19px";
+    $("wl").insertAdjacentHTML("beforeend",`<line x1="500" y1="400" x2="${n[1]*10}" y2="${n[2]*5}" stroke="#ffeb3b" stroke-width="8"/>`);
+    if(f>=4)after(()=>modal(MEDAL,"먹이그물 연쇄 반응!","크릴 하나가 줄었을 뿐인데 펭귄, 고래, 물범, 오징어가 모두 배고파졌어요. 이렇게 여러 변화가 겹치면 <b>생물 다양성</b>이 줄어들어요.",[["다음",nx]]),700)}
+   else{mist++;d.style.opacity=.4;toast(n[4])}};b.appendChild(d)});
+ add("hint","크릴이 줄었어요! 먹이가 부족해질 생물을 모두 터치하세요.")};
+
+T.accuse=(o,nx)=>{const hs=CASES.slice(0,7).filter((c,i)=>S.done.includes(i)).map(c=>c.hint);
+ paper(`<h2>범인 지목!</h2><p style="font-size:21px">수사 보드의 단서를 보고 모든 사건의 진짜 범인을 지목하세요.</p>
+ <div style="background:#efe3c8;border-radius:14px;padding:12px 18px;font-size:21px;line-height:1.7;margin:10px 0"><b>범인의 특징</b><br>${hs.map(h=>"• "+h).join("<br>")}</div><div class="row" id="sus"></div><p id="ah" style="color:#c62828;font-size:20px;text-align:center;min-height:56px"></p>`);
+ [["태양","태양 활동은 최근 수십 년간 거의 변하지 않았어요. 게다가 태양은 바다를 산성으로 만들지 못해요!"],["오존층 구멍","오존층 구멍은 자외선 문제예요. 광합성 재료도 아니고 바다를 산성화하지도 않아요!"],["화산","화산이 내뿜는 CO₂는 사람이 내뿜는 양의 1%쯤밖에 안 돼요!"],["늘어난 이산화 탄소",""]].forEach(([n,r],i)=>{
+  const b=document.createElement("button");b.className="btn "+(i%2?"blue":"");b.textContent=n;
+  b.onclick=()=>{if(i==3)modal(MAG,"범인은 늘어난 이산화 탄소!","기온을 올리고, 바다에 녹아 산성으로 만들고, 광합성 재료가 되는 것. 모든 특징이 CO₂를 가리키고 있었어요!",[["사건 종결",nx]]);else{mist++;b.disabled=true;$("ah").textContent=r}};$("sus").appendChild(b)})};
+
+/* ===== 해결·속보 ===== */
+function solve(){clearT();const st=mist<=1?3:mist<=3?2:1;S.stars[cur]=Math.max(S.stars[cur]||0,st);if(!S.done.includes(cur))S.done.push(cur);save();
+ const fin=()=>{if(S.done.length>=8)after(()=>modal(MEDAL,"모든 사건 해결!","이제 나만의 탐정 보고서를 만들어 볼까요?",[["보고서 만들기",openReport]]),300)};
+ modal(MEDAL,"사건 해결! <span style='color:#ff8f00'>"+"★".repeat(st)+"☆".repeat(3-st)+"</span>",(C.hint?"수사 보드에 범인 단서 추가:<br><b>"+C.hint+"</b><br><br>":"")+"도감 등록<br>"+C.ph.map(p=>"<b>"+PH[p][0]+"</b>: "+PH[p][1]).join("<br>"),
+  [["지도로",()=>{renderMap();go("sMap");const n=S.done.length;
+   if([2,4,6].includes(n)&&!S.news.includes(n)){S.news.push(n);save();after(()=>modal('<div class="banner" style="position:static">긴급 속보</div>',"기후 뉴스 속보 퀴즈!","8초 안에 O, X로 답하세요! 3문제를 모두 맞히면 보너스 별!",[["시작",()=>news(fin)]]),300)}else fin()}]])}
+function news(cb){const set=shuf(NEWS.slice()).slice(0,3);let k=0,sc=0;
+ const ask=()=>{if(k>=3){if(sc==3)S.bonus=(S.bonus||0)+1;save();renderMap();return modal(MEDAL,"속보 퀴즈 종료",sc+"/3 정답!"+(sc==3?"<br>보너스 별 1개 획득!":""),[["확인",cb]])}
+  const q=set[k];let t=8,dn=false;const h=setInterval(()=>{t--;const e=$("nt");if(e)e.textContent=t;if(t<=0)fin(null)},1000);
+  const fin=a=>{if(dn)return;dn=true;clearInterval(h);const ok=a===q[1];if(ok)sc++;k++;modal(ok?MEDAL:MAG,ok?"정답!":a==null?"시간 초과!":"오답!",q[2],[["다음",ask]])};
+  modal('<div class="banner" style="position:static">속보 '+(k+1)+'/3</div>',q[0],'남은 시간 <b id="nt">8</b>초',[["O",()=>fin(1),"blue"],["X",()=>fin(0),"red"]])};ask()}
+
+function showDex(){const got=new Set(S.done.flatMap(i=>CASES[i].ph));
+ $("dex").innerHTML=PH.map((p,i)=>got.has(i)?`<div class="ph"><b>${i+1}. ${p[0]}</b>${p[1]}</div>`:`<div class="ph lock"><b>${i+1}. ???</b>사건을 해결하면 열려요</div>`).join("");go("sDex")}
+
+/* ===== 보고서 ===== */
+const rank=()=>{const s=totalStars();return s>=24?"명탐정":s>=17?"수석 탐정":"견습 탐정"};
+function openReport(){const st=$("stickers");st.innerHTML="";
+ CASES.map(face).concat([OWL]).forEach((s,i)=>{const e=document.createElement("div");e.className="stk"+(i==sticker?" sel":"");e.innerHTML=s;
+  e.addEventListener("click",()=>{sticker=i;document.querySelectorAll(".stk").forEach(x=>x.classList.remove("sel"));e.classList.add("sel");drawReport()});st.appendChild(e)});
+ go("sReport");drawReport()}
+function wrap(x,t,X,Y,w,lh){let l="";for(const ch of t){if(x.measureText(l+ch).width>w){x.fillText(l,X,Y);Y+=lh;l=ch}else l+=ch}x.fillText(l,X,Y)}
+function drawReport(cb){const cv=$("cv"),x=cv.getContext("2d"),W=1200,H=1700,F='"Jua","Noto Sans KR",sans-serif';
+ x.fillStyle="#fff8e7";x.fillRect(0,0,W,H);x.strokeStyle="#f0e2c0";x.lineWidth=2;for(let y=60;y<H;y+=40){x.beginPath();x.moveTo(0,y);x.lineTo(W,y);x.stroke()}
+ x.fillStyle="#8d5524";x.fillRect(0,0,40,H);x.strokeStyle="#8d5524";x.lineWidth=10;x.strokeRect(60,20,W-80,H-40);
+ x.textAlign="center";x.fillStyle="#5d3a14";x.font="44px "+F;x.fillText("생태계 탐정단 · 사건 해결 보고서",W/2+20,100);
+ x.font="60px "+F;x.fillStyle="#2b2118";x.fillText(S.name+" "+rank(),W/2+20,400);
+ x.font="30px "+F;x.fillStyle="#ff8f00";x.fillText("★ "+totalStars()+"개 · 해결한 사건 "+S.done.length+"/8 · "+new Date().toLocaleDateString("ko-KR"),W/2+20,450);
+ x.save();x.translate(W/2+20,520);x.rotate(-.03);x.fillStyle="#c62828";x.fillRect(-380,-42,760,76);x.fillStyle="#fff";x.font="38px "+F;x.fillText("범인: 늘어난 이산화 탄소(CO₂)",0,10);x.restore();
+ x.textAlign="left";x.fillStyle="#5d3a14";x.font="36px "+F;x.fillText("내가 알아낸 생태계 변화",110,630);
+ const got=new Set(S.done.flatMap(i=>CASES[i].ph));
+ PH.forEach((p,i)=>{x.font="30px "+F;x.fillStyle=got.has(i)?"#1b5e20":"#bbb";x.fillText((got.has(i)?"✔ ":"□ ")+(i+1)+". "+p[0],110+(i%2)*520,690+Math.floor(i/2)*58)});
+ [[1020,"가장 놀라웠던 사실","#fff3c4","#e65100",$("rFact").value],[1310,"나의 실천 다짐","#dcedc8","#2e7d32",$("rPledge").value]].forEach(([y,t,bg,c,v])=>{
+  x.fillStyle=bg;x.fillRect(100,y-50,W-180,240);x.fillStyle=c;x.font="34px "+F;x.fillText(t,130,y);x.fillStyle="#333";x.font="32px "+F;wrap(x,v||"(아직 적지 않았어요)",130,y+60,W-260,46)});
+ x.textAlign="center";x.fillStyle="#8d5524";x.font="32px "+F;x.fillText("작은 실천이 생태계를 지킵니다",W/2+20,1640);
+ const img=new Image();img.onload=()=>{x.save();x.beginPath();x.arc(W/2+20,240,110,0,7);x.clip();x.drawImage(img,W/2-90,130,220,220);x.restore();
+  x.lineWidth=8;x.strokeStyle="#8d5524";x.beginPath();x.arc(W/2+20,240,110,0,7);x.stroke();if(cb)cb()};
+ img.onerror=()=>{if(cb)cb()};
+ img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(CASES.map(face).concat([OWL])[sticker])}
+function download(){drawReport(()=>{$("cv").toBlob(b=>{const u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download=(S.name||"탐정")+"_기후탐정보고서.png";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),3000);
+ modal(MEDAL,"저장 완료!","보고서 이미지가 기기의 <b>다운로드</b> 폴더에 저장됐어요.<br>(삼성 인터넷: 내 파일 → 다운로드)",[["확인"]])},"image/png")})}
+
+if(S.name&&S.done.length)renderMap();
+</script>
+</body>
+</html>
